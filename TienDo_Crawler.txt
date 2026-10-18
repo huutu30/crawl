@@ -1,0 +1,22 @@
+BÁO CÁO TIẾN ĐỘ CRAWL DỮ LIỆU
+===================================
+Thời điểm dừng: Tối ngày 07/05/2026
+
+1. KẾT QUẢ ĐÃ ĐẠT ĐƯỢC:
+- Số lượng khách hàng/môi giới thu thập được: 330 / 500 số.
+- Toàn bộ 330 số này đã được lọc trùng (unique) và là các khách hàng khác nhau.
+- Đã loại bỏ hoàn toàn các số tổng đài rác, số giấy phép kinh doanh của web, và loại bỏ khu vực Hà Nội.
+
+2. TRẠNG THÁI HIỆN TẠI ("TRÍ NHỚ" CỦA BOT):
+- Link đã quét thành công (Visited): 388 đường link.
+- Link đang xếp hàng chờ quét tiếp (Queue): 377 đường link.
+- Vị trí trang web cuối cùng bot vừa lướt qua: bds123.vn và phongtro123.com khu vực miền Nam, miền Tây.
+
+3. HƯỚNG DẪN CHO LẦN TỚI:
+Ngày mai hoặc lần tới bạn muốn chạy tiếp để lấy nốt 170 số còn lại, bạn KHÔNG cần làm gì thêm, chỉ cần gõ đúng một lệnh quen thuộc:
+
+    node index.js
+
+Bot sẽ tự động đọc file "crawler_state.json" để nạp lại 377 link đang chờ và 388 link đã quét, sau đó nó sẽ tiếp tục chạy để đẩy số lượng từ 330 lên 500.
+
+Chúc bạn ngủ ngon và hẹn gặp lại ở phiên làm việc tiếp theo!
