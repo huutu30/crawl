@@ -18,6 +18,8 @@ const path = require('path');
 
 // ===== CẤU HÌNH TỐI ƯU & CHỐNG CHẶN =====
 const OUTPUT_FILE = 'supercrawl.txt';
+const OUTPUT_FILE_HCM = 'supercrawl_hcm.txt';
+const OUTPUT_FILE_TINH = 'supercrawl_tinh.txt';
 const STATE_FILE = 'supercrawl_state.json';
 const CONCURRENCY = 6;           // 6 tab song song: điểm ngọt giữa tốc độ và độ bền chống block
 const PAGE_TIMEOUT_MS = 12000;   // 12s timeout mỗi truy vấn
@@ -90,8 +92,38 @@ const KEYWORDS = [
 
 // ===== ĐỊA BÀN MỤC TIÊU: TỪ ĐÀ NẴNG TRỞ VÔ MIỀN NAM & MIỀN TÂY =====
 // (Đã loại bỏ hoàn toàn Miền Bắc & Bắc Trung Bộ theo yêu cầu)
-const LOCATIONS = [
 
+const LOCATIONS_HCM = [
+    // 4. MIỀN NAM - TP. HỒ CHÍ MINH (Nội thành & Ngoại thành)
+    // Quận 1, 3, 4, 5, 6, 7, 8, 10, 11, 12
+    'Phường Bến Nghé Quận 1', 'Phường Bến Thành Quận 1', 'Phường Đa Kao Quận 1', 'Phường Tân Định Quận 1', 'Phường Cầu Ông Lãnh Quận 1', 'Phường Cô Giang Quận 1', 'Phường Cầu Kho Quận 1',
+    'Phường Võ Thị Sáu Quận 3', 'Phường 1 Quận 3', 'Phường 3 Quận 3', 'Phường 5 Quận 3', 'Phường 14 Quận 3', 'Cách Mạng Tháng 8 Quận 3', 'Lê Văn Sỹ Quận 3',
+    'Phường 1 Quận 4', 'Phường 4 Quận 4', 'Phường 9 Quận 4', 'Phường 13 Quận 4', 'Phường 16 Quận 4', 'Hoàng Diệu Quận 4', 'Đoàn Văn Bơ Quận 4',
+    'Phường 1 Quận 5', 'Phường 5 Quận 5', 'Phường 9 Quận 5', 'Phường 11 Quận 5', 'Phường 14 Quận 5', 'Chợ Lớn Quận 5', 'Trần Hưng Đạo Quận 5',
+    'Phường 1 Quận 6', 'Phường 6 Quận 6', 'Phường 10 Quận 6', 'Phường 11 Quận 6', 'Phường 12 Quận 6', 'Phường 13 Quận 6', 'Phường 14 Quận 6', 'Hậu Giang Quận 6', 'Bà Hom Quận 6',
+    'Tân Thuận Đông Quận 7', 'Tân Thuận Tây Quận 7', 'Tân Kiểng Quận 7', 'Tân Hưng Quận 7', 'Bình Thuận Quận 7', 'Tân Quy Quận 7', 'Phú Thuận Quận 7', 'Tân Phong Quận 7', 'Phú Mỹ Quận 7', 'Huỳnh Tấn Phát Quận 7', 'Nguyễn Thị Thập Quận 7',
+    'Phường 1 Quận 8', 'Phường 2 Quận 8', 'Phường 4 Quận 8', 'Phường 5 Quận 8', 'Phường 6 Quận 8', 'Phường 7 Quận 8', 'Phường 10 Quận 8', 'Phường 14 Quận 8', 'Phường 15 Quận 8', 'Phường 16 Quận 8', 'Phạm Thế Hiển Quận 8',
+    'Phường 1 Quận 10', 'Phường 6 Quận 10', 'Phường 10 Quận 10', 'Phường 12 Quận 10', 'Phường 14 Quận 10', 'Phường 15 Quận 10', 'Tô Hiến Thành Quận 10', 'Lý Thường Kiệt Quận 10', 'Thành Thái Quận 10',
+    'Phường 1 Quận 11', 'Phường 5 Quận 11', 'Phường 8 Quận 11', 'Phường 11 Quận 11', 'Phường 14 Quận 11', 'Phường 15 Quận 11', 'Lạc Long Quân Quận 11', 'Lê Đại Hành Quận 11',
+    'Thạnh Xuân Quận 12', 'Thạnh Lộc Quận 12', 'An Phú Đông Quận 12', 'Thới An Quận 12', 'Hiệp Thành Quận 12', 'Tân Chánh Hiệp Quận 12', 'Tân Thới Hiệp Quận 12', 'Đông Hưng Thuận Quận 12', 'Tân Thới Nhất Quận 12', 'Tân Hưng Thuận Quận 12', 'Trung Mỹ Tây Quận 12', 'Hà Huy Giáp Quận 12', 'Nguyễn Ảnh Thủ Quận 12', 'Lê Văn Khương Quận 12', 'Tô Ký Quận 12',
+    // TP. Thủ Đức
+    'Linh Xuân Thủ Đức', 'Hiệp Bình Phước Thủ Đức', 'Hiệp Bình Chánh Thủ Đức', 'Tam Bình Thủ Đức', 'Tam Phú Thủ Đức', 'Bình Chiểu Thủ Đức', 'Linh Trung Thủ Đức', 'Linh Tây Thủ Đức', 'Linh Đông Thủ Đức', 'Linh Chiểu Thủ Đức', 'Bình Thọ Thủ Đức', 'Trường Thọ Thủ Đức', 'Võ Văn Ngân Thủ Đức', 'Kha Vạn Cân Thủ Đức', 'Đặng Văn Bi Thủ Đức', 'Long Trường Thủ Đức', 'Trường Thạnh Thủ Đức', 'Long Phước Thủ Đức', 'Long Bình Thủ Đức', 'Long Thạnh Mỹ Thủ Đức', 'Phú Hữu Thủ Đức', 'Tăng Nhơn Phú A Thủ Đức', 'Tăng Nhơn Phú B Thủ Đức', 'Phước Long A Thủ Đức', 'Phước Long B Thủ Đức', 'Hiệp Phú Thủ Đức', 'Tân Phú Thủ Đức', 'Lê Văn Việt Thủ Đức', 'Đỗ Xuân Hợp Thủ Đức', 'Nguyễn Duy Trinh Thủ Đức', 'An Phú Thủ Đức', 'An Khánh Thủ Đức', 'Thảo Điền Thủ Đức', 'Bình Trưng Đông Thủ Đức', 'Bình Trưng Tây Thủ Đức', 'Cát Lái Thủ Đức', 'Thạnh Mỹ Lợi Thủ Đức', 'Nguyễn Thị Định Thủ Đức',
+    // Bình Thạnh, Phú Nhuận, Gò Vấp, Tân Bình, Tân Phú, Bình Tân
+    'Phường 1 Bình Thạnh', 'Phường 2 Bình Thạnh', 'Phường 3 Bình Thạnh', 'Phường 6 Bình Thạnh', 'Phường 7 Bình Thạnh', 'Phường 11 Bình Thạnh', 'Phường 12 Bình Thạnh', 'Phường 13 Bình Thạnh', 'Phường 14 Bình Thạnh', 'Phường 17 Bình Thạnh', 'Phường 19 Bình Thạnh', 'Phường 24 Bình Thạnh', 'Phường 25 Bình Thạnh', 'Phường 26 Bình Thạnh', 'Phường 27 Bình Thạnh', 'Phường 28 Bình Thạnh', 'Nơ Trang Long Bình Thạnh', 'Bạch Đằng Bình Thạnh', 'Xô Viết Nghệ Tĩnh Bình Thạnh', 'Đinh Bộ Lĩnh Bình Thạnh',
+    'Phường 1 Phú Nhuận', 'Phường 2 Phú Nhuận', 'Phường 4 Phú Nhuận', 'Phường 6 Phú Nhuận', 'Phường 7 Phú Nhuận', 'Phường 8 Phú Nhuận', 'Phường 9 Phú Nhuận', 'Phường 10 Phú Nhuận', 'Phường 15 Phú Nhuận', 'Phường 17 Phú Nhuận', 'Phan Xích Long Phú Nhuận', 'Hoàng Văn Thụ Phú Nhuận',
+    'Phường 1 Gò Vấp', 'Phường 3 Gò Vấp', 'Phường 4 Gò Vấp', 'Phường 5 Gò Vấp', 'Phường 6 Gò Vấp', 'Phường 7 Gò Vấp', 'Phường 8 Gò Vấp', 'Phường 9 Gò Vấp', 'Phường 10 Gò Vấp', 'Phường 11 Gò Vấp', 'Phường 12 Gò Vấp', 'Phường 13 Gò Vấp', 'Phường 14 Gò Vấp', 'Phường 15 Gò Vấp', 'Phường 16 Gò Vấp', 'Phường 17 Gò Vấp', 'Quang Trung Gò Vấp', 'Phan Văn Trị Gò Vấp', 'Lê Đức Thọ Gò Vấp', 'Nguyễn Oanh Gò Vấp', 'Thống Nhất Gò Vấp', 'Cây Trâm Gò Vấp',
+    'Phường 1 Tân Bình', 'Phường 2 Tân Bình', 'Phường 3 Tân Bình', 'Phường 4 Tân Bình', 'Phường 5 Tân Bình', 'Phường 6 Tân Bình', 'Phường 7 Tân Bình', 'Phường 8 Tân Bình', 'Phường 9 Tân Bình', 'Phường 10 Tân Bình', 'Phường 11 Tân Bình', 'Phường 12 Tân Bình', 'Phường 13 Tân Bình', 'Phường 15 Tân Bình', 'Cộng Hòa Tân Bình', 'Trường Chinh Tân Bình', 'Hoàng Hoa Thám Tân Bình',
+    'Phường 1 Tân Phú', 'Phường 2 Tân Phú', 'Phường 4 Tân Phú', 'Phường 6 Tân Phú', 'Phường 7 Tân Phú', 'Phường 8 Tân Phú', 'Tân Sơn Nhì Tân Phú', 'Tây Thạnh Tân Phú', 'Sơn Kỳ Tân Phú', 'Tân Quý Tân Phú', 'Tân Thành Tân Phú', 'Phú Thọ Hòa Tân Phú', 'Phú Thạnh Tân Phú', 'Phú Trung Tân Phú', 'Hòa Thạnh Tân Phú', 'Hiệp Tân Tân Phú', 'Tân Thới Hòa Tân Phú', 'Lũy Bán Bích Tân Phú', 'Thoại Ngọc Hầu Tân Phú',
+    'Bình Hưng Hòa Bình Tân', 'Bình Hưng Hòa A Bình Tân', 'Bình Hưng Hòa B Bình Tân', 'Bình Trị Đông Bình Tân', 'Bình Trị Đông A Bình Tân', 'Bình Trị Đông B Bình Tân', 'Tân Tạo Bình Tân', 'Tân Tạo A Bình Tân', 'An Lạc Bình Tân', 'An Lạc A Bình Tân', 'Khu Tên Lửa Bình Tân', 'Mã Lò Bình Tân', 'Hương Lộ 2 Bình Tân', 'Kinh Dương Vương Bình Tân',
+    // Ngoại thành TP.HCM: Hóc Môn, Bình Chánh, Củ Chi, Nhà Bè, Cần Giờ
+    'Thị trấn Hóc Môn', 'Bà Điểm Hóc Môn', 'Xuân Thới Thượng Hóc Môn', 'Xuân Thới Đông Hóc Môn', 'Xuân Thới Sơn Hóc Môn', 'Đông Thạnh Hóc Môn', 'Nhị Bình Hóc Môn', 'Tân Thới Nhì Hóc Môn', 'Tân Hiệp Hóc Môn', 'Thới Tam Thôn Hóc Môn', 'Trung Chánh Hóc Môn', 'Tân Xuân Hóc Môn', 'Phan Văn Hớn Hóc Môn', 'Nguyễn Văn Bứa Hóc Môn', 'Đặng Thúc Vịnh Hóc Môn', 'Lê Thị Hà Hóc Môn',
+    'Thị trấn Tân Túc Bình Chánh', 'Vĩnh Lộc A Bình Chánh', 'Vĩnh Lộc B Bình Chánh', 'Tân Kiên Bình Chánh', 'Tân Nhựt Bình Chánh', 'Bình Hưng Bình Chánh', 'Phong Phú Bình Chánh', 'Đa Phước Bình Chánh', 'An Phú Tây Bình Chánh', 'Hưng Long Bình Chánh', 'Quy Đức Bình Chánh', 'Tân Quý Tây Bình Chánh', 'Bình Chánh Bình Chánh', 'Lê Minh Xuân Bình Chánh', 'Phạm Văn Hai Bình Chánh', 'Quốc lộ 50 Bình Chánh', 'Quốc lộ 1A Bình Chánh', 'Đinh Đức Thiện Bình Chánh', 'Trần Văn Giàu Bình Chánh', 'Nguyễn Văn Linh Bình Chánh',
+    'Thị trấn Củ Chi', 'Tân Phú Trung Củ Chi', 'Tân Thạnh Đông Củ Chi', 'Tân Thạnh Tây Củ Chi', 'Trung An Củ Chi', 'Phú Hòa Đông Củ Chi', 'Bình Mỹ Củ Chi', 'An Nhơn Tây Củ Chi', 'Nhuận Đức Củ Chi', 'Phạm Văn Cội Củ Chi', 'Thái Mỹ Củ Chi', 'Phước Vĩnh An Củ Chi', 'Phước Hiệp Củ Chi', 'Phước Thạnh Củ Chi', 'Tân Thông Hội Củ Chi', 'Trung Lập Hạ Củ Chi', 'Trung Lập Thượng Củ Chi', 'Phú Mỹ Hưng Củ Chi', 'An Phú Củ Chi', 'Tân An Hội Củ Chi', 'Tỉnh lộ 8 Củ Chi', 'Tỉnh lộ 15 Củ Chi', 'Tỉnh lộ 2 Củ Chi', 'Quốc lộ 22 Củ Chi',
+    'Thị trấn Nhà Bè', 'Phước Kiển Nhà Bè', 'Phước Lộc Nhà Bè', 'Nhơn Đức Nhà Bè', 'Phú Xuân Nhà Bè', 'Long Thới Nhà Bè', 'Hiệp Phước Nhà Bè', 'Huỳnh Tấn Phát Nhà Bè', 'Nguyễn Hữu Thọ Nhà Bè', 'Lê Văn Lương Nhà Bè',
+    'Thị trấn Cần Thạnh Cần Giờ', 'Long Hòa Cần Giờ', 'Bình Khánh Cần Giờ', 'An Thới Đông Cần Giờ', 'Tam Thôn Hiệp Cần Giờ', 'Lý Nhơn Cần Giờ', 'Thạnh An Cần Giờ', 'Duyên Hải Cần Giờ', 'Rừng Sác Cần Giờ'
+];
+
+const LOCATIONS_PROVINCES = [
     // =====================================================================
     // 1. ĐÀ NẴNG (Thành phố trực thuộc TW)
     // =====================================================================
@@ -153,36 +185,6 @@ const LOCATIONS = [
     'Thành phố Đà Lạt Lâm Đồng', 'Thành phố Bảo Lộc Lâm Đồng',
     'Đức Trọng Lâm Đồng', 'Di Linh Lâm Đồng', 'Bảo Lâm Lâm Đồng',
     'Đơn Dương Lâm Đồng', 'Lâm Hà Lâm Đồng', 'Đam Rông Lâm Đồng',
-
-    // =====================================================================
-    // 4. MIỀN NAM - TP. HỒ CHÍ MINH (Nội thành & Ngoại thành)
-    // =====================================================================
-    // Quận 1, 3, 4, 5, 6, 7, 8, 10, 11, 12
-    'Phường Bến Nghé Quận 1', 'Phường Bến Thành Quận 1', 'Phường Đa Kao Quận 1', 'Phường Tân Định Quận 1', 'Phường Cầu Ông Lãnh Quận 1', 'Phường Cô Giang Quận 1', 'Phường Cầu Kho Quận 1',
-    'Phường Võ Thị Sáu Quận 3', 'Phường 1 Quận 3', 'Phường 3 Quận 3', 'Phường 5 Quận 3', 'Phường 14 Quận 3', 'Cách Mạng Tháng 8 Quận 3', 'Lê Văn Sỹ Quận 3',
-    'Phường 1 Quận 4', 'Phường 4 Quận 4', 'Phường 9 Quận 4', 'Phường 13 Quận 4', 'Phường 16 Quận 4', 'Hoàng Diệu Quận 4', 'Đoàn Văn Bơ Quận 4',
-    'Phường 1 Quận 5', 'Phường 5 Quận 5', 'Phường 9 Quận 5', 'Phường 11 Quận 5', 'Phường 14 Quận 5', 'Chợ Lớn Quận 5', 'Trần Hưng Đạo Quận 5',
-    'Phường 1 Quận 6', 'Phường 6 Quận 6', 'Phường 10 Quận 6', 'Phường 11 Quận 6', 'Phường 12 Quận 6', 'Phường 13 Quận 6', 'Phường 14 Quận 6', 'Hậu Giang Quận 6', 'Bà Hom Quận 6',
-    'Tân Thuận Đông Quận 7', 'Tân Thuận Tây Quận 7', 'Tân Kiểng Quận 7', 'Tân Hưng Quận 7', 'Bình Thuận Quận 7', 'Tân Quy Quận 7', 'Phú Thuận Quận 7', 'Tân Phong Quận 7', 'Phú Mỹ Quận 7', 'Huỳnh Tấn Phát Quận 7', 'Nguyễn Thị Thập Quận 7',
-    'Phường 1 Quận 8', 'Phường 2 Quận 8', 'Phường 4 Quận 8', 'Phường 5 Quận 8', 'Phường 6 Quận 8', 'Phường 7 Quận 8', 'Phường 10 Quận 8', 'Phường 14 Quận 8', 'Phường 15 Quận 8', 'Phường 16 Quận 8', 'Phạm Thế Hiển Quận 8',
-    'Phường 1 Quận 10', 'Phường 6 Quận 10', 'Phường 10 Quận 10', 'Phường 12 Quận 10', 'Phường 14 Quận 10', 'Phường 15 Quận 10', 'Tô Hiến Thành Quận 10', 'Lý Thường Kiệt Quận 10', 'Thành Thái Quận 10',
-    'Phường 1 Quận 11', 'Phường 5 Quận 11', 'Phường 8 Quận 11', 'Phường 11 Quận 11', 'Phường 14 Quận 11', 'Phường 15 Quận 11', 'Lạc Long Quân Quận 11', 'Lê Đại Hành Quận 11',
-    'Thạnh Xuân Quận 12', 'Thạnh Lộc Quận 12', 'An Phú Đông Quận 12', 'Thới An Quận 12', 'Hiệp Thành Quận 12', 'Tân Chánh Hiệp Quận 12', 'Tân Thới Hiệp Quận 12', 'Đông Hưng Thuận Quận 12', 'Tân Thới Nhất Quận 12', 'Tân Hưng Thuận Quận 12', 'Trung Mỹ Tây Quận 12', 'Hà Huy Giáp Quận 12', 'Nguyễn Ảnh Thủ Quận 12', 'Lê Văn Khương Quận 12', 'Tô Ký Quận 12',
-    // TP. Thủ Đức
-    'Linh Xuân Thủ Đức', 'Hiệp Bình Phước Thủ Đức', 'Hiệp Bình Chánh Thủ Đức', 'Tam Bình Thủ Đức', 'Tam Phú Thủ Đức', 'Bình Chiểu Thủ Đức', 'Linh Trung Thủ Đức', 'Linh Tây Thủ Đức', 'Linh Đông Thủ Đức', 'Linh Chiểu Thủ Đức', 'Bình Thọ Thủ Đức', 'Trường Thọ Thủ Đức', 'Võ Văn Ngân Thủ Đức', 'Kha Vạn Cân Thủ Đức', 'Đặng Văn Bi Thủ Đức', 'Long Trường Thủ Đức', 'Trường Thạnh Thủ Đức', 'Long Phước Thủ Đức', 'Long Bình Thủ Đức', 'Long Thạnh Mỹ Thủ Đức', 'Phú Hữu Thủ Đức', 'Tăng Nhơn Phú A Thủ Đức', 'Tăng Nhơn Phú B Thủ Đức', 'Phước Long A Thủ Đức', 'Phước Long B Thủ Đức', 'Hiệp Phú Thủ Đức', 'Tân Phú Thủ Đức', 'Lê Văn Việt Thủ Đức', 'Đỗ Xuân Hợp Thủ Đức', 'Nguyễn Duy Trinh Thủ Đức', 'An Phú Thủ Đức', 'An Khánh Thủ Đức', 'Thảo Điền Thủ Đức', 'Bình Trưng Đông Thủ Đức', 'Bình Trưng Tây Thủ Đức', 'Cát Lái Thủ Đức', 'Thạnh Mỹ Lợi Thủ Đức', 'Nguyễn Thị Định Thủ Đức',
-    // Bình Thạnh, Phú Nhuận, Gò Vấp, Tân Bình, Tân Phú, Bình Tân
-    'Phường 1 Bình Thạnh', 'Phường 2 Bình Thạnh', 'Phường 3 Bình Thạnh', 'Phường 6 Bình Thạnh', 'Phường 7 Bình Thạnh', 'Phường 11 Bình Thạnh', 'Phường 12 Bình Thạnh', 'Phường 13 Bình Thạnh', 'Phường 14 Bình Thạnh', 'Phường 17 Bình Thạnh', 'Phường 19 Bình Thạnh', 'Phường 24 Bình Thạnh', 'Phường 25 Bình Thạnh', 'Phường 26 Bình Thạnh', 'Phường 27 Bình Thạnh', 'Phường 28 Bình Thạnh', 'Nơ Trang Long Bình Thạnh', 'Bạch Đằng Bình Thạnh', 'Xô Viết Nghệ Tĩnh Bình Thạnh', 'Đinh Bộ Lĩnh Bình Thạnh',
-    'Phường 1 Phú Nhuận', 'Phường 2 Phú Nhuận', 'Phường 4 Phú Nhuận', 'Phường 6 Phú Nhuận', 'Phường 7 Phú Nhuận', 'Phường 8 Phú Nhuận', 'Phường 9 Phú Nhuận', 'Phường 10 Phú Nhuận', 'Phường 15 Phú Nhuận', 'Phường 17 Phú Nhuận', 'Phan Xích Long Phú Nhuận', 'Hoàng Văn Thụ Phú Nhuận',
-    'Phường 1 Gò Vấp', 'Phường 3 Gò Vấp', 'Phường 4 Gò Vấp', 'Phường 5 Gò Vấp', 'Phường 6 Gò Vấp', 'Phường 7 Gò Vấp', 'Phường 8 Gò Vấp', 'Phường 9 Gò Vấp', 'Phường 10 Gò Vấp', 'Phường 11 Gò Vấp', 'Phường 12 Gò Vấp', 'Phường 13 Gò Vấp', 'Phường 14 Gò Vấp', 'Phường 15 Gò Vấp', 'Phường 16 Gò Vấp', 'Phường 17 Gò Vấp', 'Quang Trung Gò Vấp', 'Phan Văn Trị Gò Vấp', 'Lê Đức Thọ Gò Vấp', 'Nguyễn Oanh Gò Vấp', 'Thống Nhất Gò Vấp', 'Cây Trâm Gò Vấp',
-    'Phường 1 Tân Bình', 'Phường 2 Tân Bình', 'Phường 3 Tân Bình', 'Phường 4 Tân Bình', 'Phường 5 Tân Bình', 'Phường 6 Tân Bình', 'Phường 7 Tân Bình', 'Phường 8 Tân Bình', 'Phường 9 Tân Bình', 'Phường 10 Tân Bình', 'Phường 11 Tân Bình', 'Phường 12 Tân Bình', 'Phường 13 Tân Bình', 'Phường 15 Tân Bình', 'Cộng Hòa Tân Bình', 'Trường Chinh Tân Bình', 'Hoàng Hoa Thám Tân Bình',
-    'Phường 1 Tân Phú', 'Phường 2 Tân Phú', 'Phường 4 Tân Phú', 'Phường 6 Tân Phú', 'Phường 7 Tân Phú', 'Phường 8 Tân Phú', 'Tân Sơn Nhì Tân Phú', 'Tây Thạnh Tân Phú', 'Sơn Kỳ Tân Phú', 'Tân Quý Tân Phú', 'Tân Thành Tân Phú', 'Phú Thọ Hòa Tân Phú', 'Phú Thạnh Tân Phú', 'Phú Trung Tân Phú', 'Hòa Thạnh Tân Phú', 'Hiệp Tân Tân Phú', 'Tân Thới Hòa Tân Phú', 'Lũy Bán Bích Tân Phú', 'Thoại Ngọc Hầu Tân Phú',
-    'Bình Hưng Hòa Bình Tân', 'Bình Hưng Hòa A Bình Tân', 'Bình Hưng Hòa B Bình Tân', 'Bình Trị Đông Bình Tân', 'Bình Trị Đông A Bình Tân', 'Bình Trị Đông B Bình Tân', 'Tân Tạo Bình Tân', 'Tân Tạo A Bình Tân', 'An Lạc Bình Tân', 'An Lạc A Bình Tân', 'Khu Tên Lửa Bình Tân', 'Mã Lò Bình Tân', 'Hương Lộ 2 Bình Tân', 'Kinh Dương Vương Bình Tân',
-    // Ngoại thành TP.HCM: Hóc Môn, Bình Chánh, Củ Chi, Nhà Bè, Cần Giờ
-    'Thị trấn Hóc Môn', 'Bà Điểm Hóc Môn', 'Xuân Thới Thượng Hóc Môn', 'Xuân Thới Đông Hóc Môn', 'Xuân Thới Sơn Hóc Môn', 'Đông Thạnh Hóc Môn', 'Nhị Bình Hóc Môn', 'Tân Thới Nhì Hóc Môn', 'Tân Hiệp Hóc Môn', 'Thới Tam Thôn Hóc Môn', 'Trung Chánh Hóc Môn', 'Tân Xuân Hóc Môn', 'Phan Văn Hớn Hóc Môn', 'Nguyễn Văn Bứa Hóc Môn', 'Đặng Thúc Vịnh Hóc Môn', 'Lê Thị Hà Hóc Môn',
-    'Thị trấn Tân Túc Bình Chánh', 'Vĩnh Lộc A Bình Chánh', 'Vĩnh Lộc B Bình Chánh', 'Tân Kiên Bình Chánh', 'Tân Nhựt Bình Chánh', 'Bình Hưng Bình Chánh', 'Phong Phú Bình Chánh', 'Đa Phước Bình Chánh', 'An Phú Tây Bình Chánh', 'Hưng Long Bình Chánh', 'Quy Đức Bình Chánh', 'Tân Quý Tây Bình Chánh', 'Bình Chánh Bình Chánh', 'Lê Minh Xuân Bình Chánh', 'Phạm Văn Hai Bình Chánh', 'Quốc lộ 50 Bình Chánh', 'Quốc lộ 1A Bình Chánh', 'Đinh Đức Thiện Bình Chánh', 'Trần Văn Giàu Bình Chánh', 'Nguyễn Văn Linh Bình Chánh',
-    'Thị trấn Củ Chi', 'Tân Phú Trung Củ Chi', 'Tân Thạnh Đông Củ Chi', 'Tân Thạnh Tây Củ Chi', 'Trung An Củ Chi', 'Phú Hòa Đông Củ Chi', 'Bình Mỹ Củ Chi', 'An Nhơn Tây Củ Chi', 'Nhuận Đức Củ Chi', 'Phạm Văn Cội Củ Chi', 'Thái Mỹ Củ Chi', 'Phước Vĩnh An Củ Chi', 'Phước Hiệp Củ Chi', 'Phước Thạnh Củ Chi', 'Tân Thông Hội Củ Chi', 'Trung Lập Hạ Củ Chi', 'Trung Lập Thượng Củ Chi', 'Phú Mỹ Hưng Củ Chi', 'An Phú Củ Chi', 'Tân An Hội Củ Chi', 'Tỉnh lộ 8 Củ Chi', 'Tỉnh lộ 15 Củ Chi', 'Tỉnh lộ 2 Củ Chi', 'Quốc lộ 22 Củ Chi',
-    'Thị trấn Nhà Bè', 'Phước Kiển Nhà Bè', 'Phước Lộc Nhà Bè', 'Nhơn Đức Nhà Bè', 'Phú Xuân Nhà Bè', 'Long Thới Nhà Bè', 'Hiệp Phước Nhà Bè', 'Huỳnh Tấn Phát Nhà Bè', 'Nguyễn Hữu Thọ Nhà Bè', 'Lê Văn Lương Nhà Bè',
-    'Thị trấn Cần Thạnh Cần Giờ', 'Long Hòa Cần Giờ', 'Bình Khánh Cần Giờ', 'An Thới Đông Cần Giờ', 'Tam Thôn Hiệp Cần Giờ', 'Lý Nhơn Cần Giờ', 'Thạnh An Cần Giờ', 'Duyên Hải Cần Giờ', 'Rừng Sác Cần Giờ',
 
     // =====================================================================
     // 5. MIỀN NAM - CÁC TỈNH ĐÔNG NAM BỘ
@@ -264,6 +266,11 @@ const LOCATIONS = [
     'Huyện Phú Tân Cà Mau', 'Huyện U Minh Cà Mau'
 ];
 
+const LOCATIONS = [
+    ...LOCATIONS_HCM.map(loc => ({ loc, isHcm: true })),
+    ...LOCATIONS_PROVINCES.map(loc => ({ loc, isHcm: false }))
+];
+
 // ===== TIỆN ÍCH =====
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -327,10 +334,19 @@ const saveState = (state) => {
 };
 
 // ===== GHI SĐT RA FILE =====
-const appendPhones = (phones) => {
+// ===== GHI SĐT RA FILE =====
+const appendPhones = (phones, isHcm) => {
     if (!phones.length) return;
     try {
-        fs.appendFileSync(OUTPUT_FILE, phones.join('\n') + '\n', 'utf-8');
+        const text = phones.join('\n') + '\n';
+        // 1. Luôn ghi vào file tổng hợp
+        fs.appendFileSync(OUTPUT_FILE, text, 'utf-8');
+        // 2. Ghi phân loại theo TP.HCM và Tỉnh
+        if (isHcm) {
+            fs.appendFileSync(OUTPUT_FILE_HCM, text, 'utf-8');
+        } else {
+            fs.appendFileSync(OUTPUT_FILE_TINH, text, 'utf-8');
+        }
     } catch (e) {
         console.error('[Lỗi ghi file]', e.message);
     }
@@ -341,8 +357,11 @@ const buildQueue = (keywords, locations, state) => {
     const byKw = {};
     for (const kw of keywords) {
         byKw[kw] = locations
-            .map(loc => `${kw} ${loc}`)
-            .filter(q => !state.completed[q]);
+            .map(item => ({
+                query: `${kw} ${item.loc}`,
+                isHcm: item.isHcm,
+            }))
+            .filter(item => !state.completed[item.query]);
     }
     const queue = [];
     let added = true;
@@ -447,7 +466,8 @@ const isBlockedPage = (url, content) => {
 };
 
 // ===== CÀO 1 TRUY VẤN =====
-const crawlQuery = async (page, query, existingPhones, workerId) => {
+const crawlQuery = async (page, queryItem, existingPhones, workerId) => {
+    const { query, isHcm } = queryItem;
     // Luân phiên 2 endpoint Maps để phân tán tải
     const searchUrl = Math.random() > 0.5
         ? `https://www.google.com/maps/search/${encodeURIComponent(query)}/`
@@ -547,16 +567,17 @@ const crawlQuery = async (page, query, existingPhones, workerId) => {
             }
         }
 
+        const tag = isHcm ? 'TP.HCM' : 'Tỉnh';
         if (newPhones.length > 0) {
-            appendPhones(newPhones);
-            console.log(`[T${workerId}] ✅ +${newPhones.length} mới (${allCandidates.length} trên Maps) | "${query}"`);
+            appendPhones(newPhones, isHcm);
+            console.log(`[T${workerId}] ✅ +${newPhones.length} mới [${tag}] (${allCandidates.length} trên Maps) | "${query}"`);
         } else if (allCandidates.length > 0) {
-            console.log(`[T${workerId}] 🔁 ${allCandidates.length} SĐT đều đã có | "${query}"`);
+            console.log(`[T${workerId}] 🔁 ${allCandidates.length} SĐT đều đã có [${tag}] | "${query}"`);
         } else {
-            console.log(`[T${workerId}] ⚪ Không tìm thấy SĐT | "${query}"`);
+            console.log(`[T${workerId}] ⚪ Không tìm thấy SĐT [${tag}] | "${query}"`);
         }
 
-        return newPhones.length;
+        return { count: newPhones.length, isHcm };
 
     } catch (err) {
         throw err;
@@ -584,7 +605,7 @@ const crawlQuery = async (page, query, existingPhones, workerId) => {
         return;
     }
 
-    console.log(`[Cấu hình] ${KEYWORDS.length} từ khóa × ${LOCATIONS.length} địa bàn`);
+    console.log(`[Cấu hình] ${KEYWORDS.length} từ khóa × ${LOCATIONS.length} địa bàn (${LOCATIONS_HCM.length} TP.HCM, ${LOCATIONS_PROVINCES.length} Tỉnh)`);
     console.log(`[Queue] Còn ${totalQueries.toLocaleString()} truy vấn chưa xử lý`);
     console.log(`[Chrome] Khởi động 1 browser, ${CONCURRENCY} tab song song...`);
     console.log('');
@@ -606,6 +627,8 @@ const crawlQuery = async (page, query, existingPhones, workerId) => {
 
     let queryIndex = 0;
     let totalNew = 0;
+    let totalNewHcm = 0;
+    let totalNewTinh = 0;
     const startTime = Date.now();
 
     const getNext = () => queryIndex < allQueries.length ? allQueries[queryIndex++] : null;
@@ -619,8 +642,8 @@ const crawlQuery = async (page, query, existingPhones, workerId) => {
             // Chờ nếu hệ thống đang hạ nhiệt block
             await waitIfBlocked();
 
-            const query = getNext();
-            if (!query) break;
+            const queryItem = getNext();
+            if (!queryItem) break;
 
             handled++;
 
@@ -632,17 +655,23 @@ const crawlQuery = async (page, query, existingPhones, workerId) => {
             }
 
             try {
-                const n = await crawlQuery(page, query, existingPhones, workerId);
+                const res = await crawlQuery(page, queryItem, existingPhones, workerId);
+                const n = res ? res.count : 0;
                 totalNew += n;
+                if (queryItem.isHcm) {
+                    totalNewHcm += n;
+                } else {
+                    totalNewTinh += n;
+                }
 
                 // Log tiến độ tổng thể mỗi 20 truy vấn
                 if (queryIndex % 20 === 0) {
                     const elapsed = (Date.now() - startTime) / 1000 / 60;
                     const rate = elapsed > 0 ? Math.round(totalNew / elapsed) : 0;
-                    console.log(`\n📊 Tiến độ: ${queryIndex}/${totalQueries} (${Math.round(queryIndex / totalQueries * 100)}%) | +${totalNew} SĐT mới | ~${rate} số/phút\n`);
+                    console.log(`\n📊 Tiến độ: ${queryIndex}/${totalQueries} (${Math.round(queryIndex / totalQueries * 100)}%) | +${totalNew} mới (+${totalNewHcm} HCM, +${totalNewTinh} Tỉnh) | ~${rate} số/phút\n`);
                 }
 
-                state.completed[query] = true;
+                state.completed[queryItem.query] = true;
                 saveState(state);
 
                 // Chờ nếu đang trong trạng thái bị block
@@ -655,7 +684,7 @@ const crawlQuery = async (page, query, existingPhones, workerId) => {
                 const msg = err.message || '';
                 if (msg === 'BLOCKED') {
                     // Đưa lại query vào cuối hàng đợi để cào lại
-                    allQueries.push(query);
+                    allQueries.push(queryItem);
                     await waitIfBlocked();
                 } else {
                     console.error(`[T${workerId}] ⚠️  Lỗi: ${msg.slice(0, 80)}`);
@@ -680,21 +709,26 @@ const crawlQuery = async (page, query, existingPhones, workerId) => {
 
     try { await browser.close(); } catch (e) { }
 
-    // Đọc số dòng cuối
-    let finalCount = 0;
-    if (fs.existsSync(OUTPUT_FILE)) {
-        finalCount = fs.readFileSync(OUTPUT_FILE, 'utf-8')
-            .split('\n').filter(l => l.trim()).length;
-    }
+    // Đếm số dòng cuối của từng file
+    const countLines = (filePath) => {
+        if (!fs.existsSync(filePath)) return 0;
+        return fs.readFileSync(filePath, 'utf-8').split('\n').filter(l => l.trim()).length;
+    };
+
+    const finalTotal = countLines(OUTPUT_FILE);
+    const finalHcm = countLines(OUTPUT_FILE_HCM);
+    const finalTinh = countLines(OUTPUT_FILE_TINH);
 
     const elapsed = Math.round((Date.now() - startTime) / 1000 / 60);
     console.log('');
     console.log('╔══════════════════════════════════════════════════════════════╗');
     console.log('║                   🎉 HOÀN THÀNH CHIẾN DỊCH                  ║');
     console.log('╚══════════════════════════════════════════════════════════════╝');
-    console.log(`  ⏱️  Thời gian: ${elapsed} phút`);
-    console.log(`  📱 SĐT mới thu được: ${totalNew.toLocaleString()}`);
-    console.log(`  📄 Tổng trong ${OUTPUT_FILE}: ${finalCount.toLocaleString()}`);
+    console.log(`  ⏱️   Thời gian chạy: ${elapsed} phút`);
+    console.log(`  📱  SĐT mới thu được đợt này: ${totalNew.toLocaleString()} (HCM: ${totalNewHcm.toLocaleString()} | Tỉnh: ${totalNewTinh.toLocaleString()})`);
+    console.log(`  📄  Tổng tích lũy trong ${OUTPUT_FILE}: ${finalTotal.toLocaleString()}`);
+    console.log(`  📍  Tổng tích lũy trong ${OUTPUT_FILE_HCM}: ${finalHcm.toLocaleString()}`);
+    console.log(`  🌐  Tổng tích lũy trong ${OUTPUT_FILE_TINH}: ${finalTinh.toLocaleString()}`);
     console.log('');
 
     // Xóa state khi hoàn thành toàn bộ
