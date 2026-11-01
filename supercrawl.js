@@ -9,7 +9,7 @@
  *  5. Phạm vi địa bàn: Từ ĐÀ NẴNG trở vô NAM TRUNG BỘ, TÂY NGUYÊN, MIỀN NAM & MIỀN TÂY (loại bỏ hoàn toàn Miền Bắc & Bắc Trung Bộ)
  *  6. 30 từ khóa ngành hàng
  *  7. Dedup đầy đủ với toàn bộ dữ liệu sẵn có (88.000+ số)
- *  8. Xuất ra supercrawl.txt, lưu tiến độ supercrawl_state.json
+ *  8. Xuất ra supercrawl.txt (tổng hợp), từ mốc dòng 32.563 bắt đầu phân tách đồng thời vào supercrawl_hcm.txt và supercrawl_tinh.txt
  */
 
 const puppeteer = require('puppeteer');
@@ -18,6 +18,7 @@ const path = require('path');
 
 // ===== CẤU HÌNH TỐI ƯU & CHỐNG CHẶN =====
 const OUTPUT_FILE = 'supercrawl.txt';
+// Lưu ý: Từ mốc dòng 32.563 của supercrawl.txt trở đi bắt đầu áp dụng cơ chế phân tách vào supercrawl_hcm.txt và supercrawl_tinh.txt
 const OUTPUT_FILE_HCM = 'supercrawl_hcm.txt';
 const OUTPUT_FILE_TINH = 'supercrawl_tinh.txt';
 const STATE_FILE = 'supercrawl_state.json';
