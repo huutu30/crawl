@@ -2,8 +2,9 @@
  * SUPERCRAWL.JS - Trình thu thập SĐT hộ kinh doanh qua Google Maps (Phiên bản tối ưu)
  * ------------------------------------------------------------------------------------
  * Cải tiến và tối ưu:
- *  1. Quản lý vòng đời Chrome theo chu kỳ (mỗi 500 truy vấn đóng/mở lại browser) để giải phóng 100% RAM rác
- *  2. Concurrency 6 tab song song cân bằng tốc độ và chống block IP
+ *  1. Quản lý vòng đời Chrome theo chu kỳ (mỗi 180 truy vấn đóng/mở lại browser) để giải phóng 100% RAM rác
+ *  2. Giới hạn V8 heap 512MB/tab và đổi tab mỗi 25 truy vấn chống rò rỉ bộ nhớ
+ *  3. Concurrency 6 tab song song cân bằng tốc độ và chống block IP
  *  3. Chặn hình ảnh, CSS, font, media để giảm băng thông và tăng tốc độ render
  *  4. Intercept XHR/Fetch responses từ Maps để bắt thêm số điện thoại
  *  5. Phạm vi địa bàn: Từ ĐÀ NẴNG trở vô NAM TRUNG BỘ, TÂY NGUYÊN, MIỀN NAM & MIỀN TÂY (loại bỏ hoàn toàn Miền Bắc & Bắc Trung Bộ)
@@ -23,9 +24,9 @@ const OUTPUT_FILE_HCM = 'supercrawl_hcm.txt';
 const OUTPUT_FILE_TINH = 'supercrawl_tinh.txt';
 const STATE_FILE = 'supercrawl_state.json';
 const CONCURRENCY = 6;           // 6 tab song song: điểm ngọt giữa tốc độ và độ bền chống block
-const CYCLE_QUERIES = 500;       // Đóng/khởi động lại toàn bộ Browser sau mỗi 500 truy vấn để giải phóng 100% RAM rác
+const CYCLE_QUERIES = 180;       // Đóng/khởi động lại toàn bộ Browser sau mỗi 180 truy vấn (~7-8 phút) để giải phóng 100% RAM rác
 const PAGE_TIMEOUT_MS = 12000;   // 12s timeout mỗi truy vấn
-const TAB_RECYCLE_AFTER = 40;    // Tái tạo tab sau mỗi 40 truy vấn
+const TAB_RECYCLE_AFTER = 25;    // Tái tạo tab sau mỗi 25 truy vấn để dọn DOM cache
 const DELAY_MIN = 500;           // Delay tự nhiên 500ms
 const DELAY_MAX = 900;           // Delay tối đa 900ms
 
@@ -640,6 +641,7 @@ const crawlQuery = async (page, queryItem, existingPhones, workerId) => {
                 '--disable-blink-features=AutomationControlled',
                 '--disable-background-timer-throttling',
                 '--disable-backgrounding-occluded-windows',
+                '--js-flags=--max-old-space-size=512',
             ]
         });
 
