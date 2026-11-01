@@ -1,9 +1,9 @@
 /**
  * SUPERCRAWL.JS - Trình thu thập SĐT hộ kinh doanh qua Google Maps (Phiên bản tối ưu)
  * ------------------------------------------------------------------------------------
- * Cải tiến so với crawl_tieu_thuong.js:
- *  1. Trình duyệt chỉ khởi động MỘT LẦN, không đóng/mở lại theo chu kỳ
- *  2. Tăng concurrency lên 10 tab song song
+ * Cải tiến và tối ưu:
+ *  1. Quản lý vòng đời Chrome theo chu kỳ (mỗi 500 truy vấn đóng/mở lại browser) để giải phóng 100% RAM rác
+ *  2. Concurrency 6 tab song song cân bằng tốc độ và chống block IP
  *  3. Chặn hình ảnh, CSS, font, media để giảm băng thông và tăng tốc độ render
  *  4. Intercept XHR/Fetch responses từ Maps để bắt thêm số điện thoại
  *  5. Phạm vi địa bàn: Từ ĐÀ NẴNG trở vô NAM TRUNG BỘ, TÂY NGUYÊN, MIỀN NAM & MIỀN TÂY (loại bỏ hoàn toàn Miền Bắc & Bắc Trung Bộ)
@@ -23,6 +23,7 @@ const OUTPUT_FILE_HCM = 'supercrawl_hcm.txt';
 const OUTPUT_FILE_TINH = 'supercrawl_tinh.txt';
 const STATE_FILE = 'supercrawl_state.json';
 const CONCURRENCY = 6;           // 6 tab song song: điểm ngọt giữa tốc độ và độ bền chống block
+const CYCLE_QUERIES = 500;       // Đóng/khởi động lại toàn bộ Browser sau mỗi 500 truy vấn để giải phóng 100% RAM rác
 const PAGE_TIMEOUT_MS = 12000;   // 12s timeout mỗi truy vấn
 const TAB_RECYCLE_AFTER = 40;    // Tái tạo tab sau mỗi 40 truy vấn
 const DELAY_MIN = 500;           // Delay tự nhiên 500ms
@@ -608,107 +609,123 @@ const crawlQuery = async (page, queryItem, existingPhones, workerId) => {
 
     console.log(`[Cấu hình] ${KEYWORDS.length} từ khóa × ${LOCATIONS.length} địa bàn (${LOCATIONS_HCM.length} TP.HCM, ${LOCATIONS_PROVINCES.length} Tỉnh)`);
     console.log(`[Queue] Còn ${totalQueries.toLocaleString()} truy vấn chưa xử lý`);
-    console.log(`[Chrome] Khởi động 1 browser, ${CONCURRENCY} tab song song...`);
+    console.log(`[Cơ chế] Chạy ${CONCURRENCY} luồng song song | Chu kỳ tái tạo Browser mỗi ${CYCLE_QUERIES} truy vấn để xả 100% RAM`);
     console.log('');
-
-    const browser = await puppeteer.launch({
-        headless: 'new',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-accelerated-2d-canvas',
-            '--window-size=1200,900',
-            '--disable-blink-features=AutomationControlled',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-        ]
-    });
 
     let queryIndex = 0;
     let totalNew = 0;
     let totalNewHcm = 0;
     let totalNewTinh = 0;
+    let cycleNumber = 0;
     const startTime = Date.now();
 
-    const getNext = () => queryIndex < allQueries.length ? allQueries[queryIndex++] : null;
+    while (queryIndex < allQueries.length) {
+        cycleNumber++;
+        const cycleTarget = Math.min(queryIndex + CYCLE_QUERIES, allQueries.length);
+        const cycleRemaining = cycleTarget - queryIndex;
 
-    // Worker: mỗi worker quản lý 1 tab suốt vòng đời
-    const runWorker = async (workerId) => {
-        let page = await createPage(browser);
-        let handled = 0;
+        console.log(`\n========================================================================`);
+        console.log(`🚀 [CHU KỲ ${cycleNumber}] Khởi động Chrome mới (${CONCURRENCY} luồng) | Xử lý ${cycleRemaining} truy vấn (từ #${queryIndex + 1} -> #${cycleTarget}/${totalQueries})...`);
+        console.log(`========================================================================\n`);
 
-        while (true) {
-            // Chờ nếu hệ thống đang hạ nhiệt block
-            await waitIfBlocked();
+        const browser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-accelerated-2d-canvas',
+                '--window-size=1200,900',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+            ]
+        });
 
-            const queryItem = getNext();
-            if (!queryItem) break;
+        const getNext = () => (queryIndex < cycleTarget && queryIndex < allQueries.length) ? allQueries[queryIndex++] : null;
 
-            handled++;
+        // Worker: mỗi worker quản lý 1 tab trong suốt chu kỳ hiện tại
+        const runWorker = async (workerId) => {
+            let page = await createPage(browser);
+            let handled = 0;
 
-            // Tái tạo tab định kỳ để tránh rò rỉ bộ nhớ
-            if (handled > 1 && handled % TAB_RECYCLE_AFTER === 0) {
-                try { await page.close(); } catch (e) { }
-                page = await createPage(browser);
-                console.log(`[T${workerId}] ♻️  Tái tạo tab sau ${handled} truy vấn`);
-            }
-
-            try {
-                const res = await crawlQuery(page, queryItem, existingPhones, workerId);
-                const n = res ? res.count : 0;
-                totalNew += n;
-                if (queryItem.isHcm) {
-                    totalNewHcm += n;
-                } else {
-                    totalNewTinh += n;
-                }
-
-                // Log tiến độ tổng thể mỗi 20 truy vấn
-                if (queryIndex % 20 === 0) {
-                    const elapsed = (Date.now() - startTime) / 1000 / 60;
-                    const rate = elapsed > 0 ? Math.round(totalNew / elapsed) : 0;
-                    console.log(`\n📊 Tiến độ: ${queryIndex}/${totalQueries} (${Math.round(queryIndex / totalQueries * 100)}%) | +${totalNew} mới (+${totalNewHcm} HCM, +${totalNewTinh} Tỉnh) | ~${rate} số/phút\n`);
-                }
-
-                state.completed[queryItem.query] = true;
-                saveState(state);
-
-                // Chờ nếu đang trong trạng thái bị block
+            while (true) {
+                // Chờ nếu hệ thống đang hạ nhiệt block
                 await waitIfBlocked();
 
-                // Delay ngẫu nhiên tự nhiên
-                await delay(DELAY_MIN + Math.floor(Math.random() * (DELAY_MAX - DELAY_MIN)));
+                const queryItem = getNext();
+                if (!queryItem) break;
 
-            } catch (err) {
-                const msg = err.message || '';
-                if (msg === 'BLOCKED') {
-                    // Đưa lại query vào cuối hàng đợi để cào lại
-                    allQueries.push(queryItem);
-                    await waitIfBlocked();
-                } else {
-                    console.error(`[T${workerId}] ⚠️  Lỗi: ${msg.slice(0, 80)}`);
+                handled++;
+
+                // Tái tạo tab định kỳ để tránh rò rỉ bộ nhớ trong chu kỳ
+                if (handled > 1 && handled % TAB_RECYCLE_AFTER === 0) {
+                    try { await page.close(); } catch (e) { }
+                    page = await createPage(browser);
+                    console.log(`[T${workerId}] ♻️  Tái tạo tab sau ${handled} truy vấn`);
                 }
-                try { await page.close(); } catch (e) { }
-                page = await createPage(browser);
-                await delay(1500);
+
+                try {
+                    const res = await crawlQuery(page, queryItem, existingPhones, workerId);
+                    const n = res ? res.count : 0;
+                    totalNew += n;
+                    if (queryItem.isHcm) {
+                        totalNewHcm += n;
+                    } else {
+                        totalNewTinh += n;
+                    }
+
+                    // Log tiến độ tổng thể mỗi 20 truy vấn
+                    if (queryIndex % 20 === 0) {
+                        const elapsed = (Date.now() - startTime) / 1000 / 60;
+                        const rate = elapsed > 0 ? Math.round(totalNew / elapsed) : 0;
+                        console.log(`\n📊 Tiến độ: ${queryIndex}/${totalQueries} (${Math.round(queryIndex / totalQueries * 100)}%) | +${totalNew} mới (+${totalNewHcm} HCM, +${totalNewTinh} Tỉnh) | ~${rate} số/phút\n`);
+                    }
+
+                    state.completed[queryItem.query] = true;
+                    saveState(state);
+
+                    // Chờ nếu đang trong trạng thái bị block
+                    await waitIfBlocked();
+
+                    // Delay ngẫu nhiên tự nhiên
+                    await delay(DELAY_MIN + Math.floor(Math.random() * (DELAY_MAX - DELAY_MIN)));
+
+                } catch (err) {
+                    const msg = err.message || '';
+                    if (msg === 'BLOCKED') {
+                        // Đưa lại query vào cuối hàng đợi để cào lại
+                        allQueries.push(queryItem);
+                        await waitIfBlocked();
+                    } else {
+                        console.error(`[T${workerId}] ⚠️  Lỗi: ${msg.slice(0, 80)}`);
+                    }
+                    try { await page.close(); } catch (e) { }
+                    page = await createPage(browser);
+                    await delay(1500);
+                }
             }
+
+            try { await page.close(); } catch (e) { }
+        };
+
+        // Khởi động N workers song song, trễ nhẹ để tránh tất cả cùng khởi động 1 lúc
+        const workers = [];
+        for (let i = 1; i <= CONCURRENCY; i++) {
+            workers.push(runWorker(i));
+            await delay(500);
         }
 
-        try { await page.close(); } catch (e) { }
-    };
+        await Promise.all(workers);
 
-    // Khởi động N workers song song, trễ nhẹ để tránh tất cả cùng khởi động 1 lúc
-    const workers = [];
-    for (let i = 1; i <= CONCURRENCY; i++) {
-        workers.push(runWorker(i));
-        await delay(500);
+        try { await browser.close(); } catch (e) { }
+
+        if (queryIndex < allQueries.length) {
+            console.log(`\n♻️  [Chu kỳ ${cycleNumber}] Đã đóng Chrome, giải phóng 100% RAM rác. Tự động nghỉ 3s trước chu kỳ mới...\n`);
+            await delay(3000);
+        }
     }
-
-    await Promise.all(workers);
-
-    try { await browser.close(); } catch (e) { }
 
     // Đếm số dòng cuối của từng file
     const countLines = (filePath) => {
